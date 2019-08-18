@@ -167,7 +167,7 @@ app.get('/user/list', function (request, response) {
 app.get('/user/:id', function (request, response) {
     var id = request.params.id;
     var query = User.findOne({_id: id});
-    query.select("_id first_name last_name location description occupation").exec(function (err, user) {
+    query.select("_id first_name last_name location description occupation friend_list").exec(function (err, user) {
         if (!request.session.user_id) {
             response.status(401).send('Unauthorized');
         }        
@@ -477,7 +477,7 @@ app.post('/user', function(request, response){
                 location: request.body.location,
                 description: request.body.description,
                 occupation: request.body.occupation,
-                activity: { type: 'User registering', user_name: request.body.first_name + " " + request.body.last_name}
+                activity: [{ type: 'User registering', user_name: request.body.first_name + " " + request.body.last_name}]
             }, function(err, newUser) {
                 if (err) {
                     console.log('error2');
@@ -807,6 +807,122 @@ app.get('/activity', function (request, response) {
             }
         });
     }
+});
+
+
+/*
+ * /friend/add - Add a friend
+ */
+
+app.post('/friend/add', function(request, response){
+    if (!request.session.user_id || request.session.user_id !== request.body.user_id) {
+        response.status(401).send('Unauthorized');
+    } 
+
+    var query = User.findOne({_id: request.body.user_id});
+    query.exec(function (err, user) {
+        if (err) {
+            response.status(400).send('Database error');
+            return;
+        }
+        if (user === null) {
+            return response.status(400).send('User not found');
+        }
+        else {
+            var friend_list = user.friend_list;
+            friend_list.push(request.body.friend_id);
+            user.friend_list = friend_list;
+            user.save();
+        }
+        response.status(200).send('Friend added successfully');
+    });
+    
+
+});
+
+
+/*
+ * /friend/delete - Delete a friend
+ */
+
+app.post('/friend/delete', function(request, response){
+    if (!request.session.user_id || request.session.user_id !== request.body.user_id) {
+        response.status(401).send('Unauthorized');
+    } 
+
+    var query = User.findOne({_id: request.body.user_id});
+    query.exec(function (err, user) {
+        if (err) {
+            response.status(400).send('Database error');
+            return;
+        }
+        if (user === null) {
+            return response.status(400).send('User not found');
+        }
+        else {
+            var ind = user.friend_list.indexOf(request.body.friend_id);
+            if (ind !== -1) {
+                user.friend_list.splice(ind, 1)
+            }
+            user.save();
+        }
+        response.status(200).send('Friend deleted successfully');
+    });
+    
+});
+
+
+/*
+ * /user/friend - get the friend list of the user
+ */
+
+app.post('/user/friend', function(request, response){
+    if (!request.session.user_id || request.session.user_id !== request.body.user_id) {
+        response.status(401).send('Unauthorized');
+    } 
+    var query = User.findOne({_id: request.body.user_id});
+    query.exec(function (err, user) {
+        if (err) {
+            response.status(400).send('Database error');
+            return;
+        }
+        if (user === null) {
+            return response.status(400).send('User not found');
+        }
+        else {
+            var result = []
+            if (user.friend_list) {
+                async.each(user.friend_list, function (friend_id, callback) {
+                    console.log("ayyy!!!")
+                    var query1 = User.findOne({_id: friend_id});
+                    query1.exec(function (err, friend) {
+                        console.log("ayyy!")
+                        if (err) {
+                            response.status(400).send('Database error');
+                            return;
+                        }
+                        if (friend === null) {
+                            return response.status(400).send('Friend not found');
+                        }
+                        else {
+                            result.push({user_id: friend_id, first_name: friend.first_name, last_name: friend.last_name});
+                            callback();
+                        }
+                    });              
+                }, function allDone(err) {
+                    if (err) {
+                        response.status(400).send(JSON.stringify(err));
+                    }
+                    else {
+                        response.status(200).send(result);
+                    }  
+                });
+
+            }
+        }
+        
+    });
+    
 });
 
 

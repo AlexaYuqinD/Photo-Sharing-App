@@ -15,6 +15,8 @@ import UserList from './components/userList/UserList';
 import UserPhotos from './components/userPhotos/UserPhotos';
 import LoginRegister from './components/loginRegister/LoginRegister';
 import Activities from './components/activities/Activities';
+import FriendList from './components/userDetail/FriendList';
+import store from './store/index';
 import axios from 'axios';
 
 
@@ -64,7 +66,15 @@ class PhotoShare extends React.Component {
   }
 
   componentDidMount() {
-    var self = this;
+    let self = this;
+    let newState = store.getState();
+    console.log(newState);
+    // self.setState(newState);
+    function handleChange() {
+      let newState = store.getState();
+      self.setState(newState);
+    }
+    // store.subscribe(handleChange);
     axios.get('/login/info')
       .then(function (response) {
         if (response.data === false) {
@@ -74,7 +84,6 @@ class PhotoShare extends React.Component {
           });                   
         }
         else {
-          console.log('test！！');
           self.setState({
             login: true,
             firstName: response.data.first_name,
@@ -146,7 +155,12 @@ class PhotoShare extends React.Component {
                 />
                 <Route path="/users/:userId"
                   render={ (props) => (this.state.login ? 
-                    <UserDetail showUser={this.showUser} key={props.match.params.userId + 'user'} logged={this.state.login} {...props} />
+                    <UserDetail showUser={this.showUser} key={props.match.params.userId + 'user'} logged={this.state.login} userId={this.state.userId} {...props} />
+                    : <Redirect to="/login-register" />)}
+                />
+                <Route path="/friends/:userId"
+                  render={ (props) => (this.state.login ? 
+                    <FriendList showUser={this.showUser} key={props.match.params.userId + 'user'} logged={this.state.login} userId={this.state.userId} {...props} />
                     : <Redirect to="/login-register" />)}
                 />
                 <Route path="/photos/:userId"
