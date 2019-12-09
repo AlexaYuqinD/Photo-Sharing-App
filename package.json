@@ -21,7 +21,7 @@
     "express-session": "^1.16.1",
     "file-loader": "^3.0.1",
     "js-yaml": "^3.13.1",
-    "mongoose": "^4.3.4",
+    "mongoose": "^5.7.14",
     "multer": "^1.4.1",
     "nodemon": "^1.19.0",
     "prismjs": "^1.15.0",
